@@ -1,6 +1,7 @@
 """ get_players retrieve all the players and fill the players table.
 It is a one time script."""
 from bs4 import BeautifulSoup
+from threading import Thread
 import requests
 import sys
 import sqlite3
@@ -14,43 +15,45 @@ def set_team_ids(db_file):
         team_to_id[name] = team_id
     conn.close()
 
+class SinglePlayer(Thread):
 
-def parse_single_player(name, link):
-    r = requests.get(link)
-    soup = BeautifulSoup(r.text)
-    team = soup.find("a", class_="w tdn").getText()
-    if not team in team_to_id:
-        print("Warning: {} not found".format(team))
-        return
-    team = team_to_id[team]
-    trs = soup.find_all("tr")
-    height = trs[9].find_all("td")[3].text.split(" ")[0].strip()
-    weight = trs[10].find_all("td")[3].text.split(" ")[0].strip()
-    birthday = trs[10].find_all("td")[1].text.strip()
-    return [name, height, weight, birthday, team]
+    def __init__(self, name, link, db_file):
+        Thread.__init__(self)
+        self.name = name
+        self.link =  link
+        self.db = db_file
 
+    def run(self):
+        r = requests.get(self.link)
+        soup = BeautifulSoup(r.text)
+        team = soup.find("a", class_="w tdn").getText()
+        if not team in team_to_id:
+            print("Warning: {} not found".format(team))
+            return
+        team = team_to_id[team]
+        trs = soup.find_all("tr")
+        height = trs[9].find_all("td")[3].text.split(" ")[0].strip()
+        weight = trs[10].find_all("td")[3].text.split(" ")[0].strip()
+        birthday = trs[10].find_all("td")[1].text.strip()
+        write_database(self.db, [self.name, height, weight, birthday, team])
+        print("Parsed {}".format(self.name))
 
-def parse_players(link):
+def parse_players(link, db_file):
     r = requests.get(link)
     soup = BeautifulSoup(r.text)
     raw_players = soup.findAll("a", class_="sch_ris")
-    players = []
     for pl in raw_players:
         name = pl.get_text().replace('\xa0', ' ')
-        players.append(parse_single_player(name, pl["href"]))
-        print("Succesfuly parsed {}".format(name))
-    return players
+        th = SinglePlayer(name, pl["href"], db_file)
+        th.start()
+        # players.append(parse_single_player(name, pl["href"]))
 
-
-def write_database(db_file, players):
+def write_database(db_file, player):
     conn = sqlite3.connect(db_file)
-    p_id = 1
-    for player_info in players:
-        player_info = [str(p_id)] + player_info
-        p_id += 1
-        conn.execute('INSERT INTO players VALUES ' +
-                     '("{}","{}","{}","{}","{}", "{}", "0.0")'.
-                     format(*player_info))
+
+    conn.execute('INSERT INTO players VALUES ' +
+                 '(NULL, "{}","{}","{}","{}", "{}", "0.0")'.
+                 format(*player))
 
     conn.commit()
     conn.close()
@@ -63,9 +66,7 @@ def main():
     link = sys.argv[2]
     db_file = sys.argv[1]
     set_team_ids(db_file)
-
-    players = parse_players(link)
-    write_database(db_file, players)
+    parse_players(link, db_file)
 
 if __name__ == "__main__":
     main()

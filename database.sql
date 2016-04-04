@@ -1,12 +1,11 @@
 CREATE TABLE players(
-	id int,
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	name varchar(255),
 	height int,
 	weight int,
 	birthday date,
 	team int,
 	role real,
-	PRIMARY KEY(id ASC)
 );
 
 CREATE TABLE teams(
