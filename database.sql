@@ -4,15 +4,14 @@ CREATE TABLE players(
 	height int,
 	weight int,
 	birthday date,
-	team int, 
-	role real, # 0.0 coach, 1.0(pure center) -> 5.0 (pure play)
+	team int,
+	role real,
 	PRIMARY KEY(id ASC)
 );
 
 CREATE TABLE teams(
 	id int,
 	name varchar(255),
-	coach int,
 	PRIMARY KEY(id ASC)
 );
 
@@ -24,8 +23,8 @@ CREATE TABLE games(
 	pointsB int,
 	eventDate datetime,
 	champDay int,
-	statsA varchar(2047), # serialized singular stats
-	statsB varchar(2047), 
+	statsA varchar(2047),
+	statsB varchar(2047),
 	PRIMARY KEY(id ASC)
 );
 
@@ -35,4 +34,3 @@ CREATE TABLE championshipDays(
 	ending datetime,
 	PRIMARY KEY(id)
 );
-

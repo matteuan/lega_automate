@@ -8,14 +8,20 @@ import sqlite3
 team_to_id = dict()
 team_to_id[""] = 0
 
+def set_team_ids(db_file):
+    conn = sqlite3.connect(db_file)
+    for team_id, name in conn.execute("SELECT * FROM teams"):
+        team_to_id[name] = team_id
+    conn.close()
+
+
 def parse_single_player(name, link):
     r = requests.get(link)
     soup = BeautifulSoup(r.text)
     team = soup.find("a", class_="w tdn").getText()
-    max_idx = team_to_id[max(team_to_id, key=team_to_id.get)]
     if not team in team_to_id:
-        max_idx += 1
-        team_to_id[team] = max_idx
+        print("Warning: {} not found".format(team))
+        return
     team = team_to_id[team]
     trs = soup.find_all("tr")
     height = trs[9].find_all("td")[3].text.split(" ")[0].strip()
@@ -53,8 +59,10 @@ def write_database(db_file, players):
 def main():
     if len(sys.argv) != 3:
         print("Usage: " + sys.argv[0] + " [db_file] [link]")
+        return
     link = sys.argv[2]
     db_file = sys.argv[1]
+    set_team_ids(db_file)
 
     players = parse_players(link)
     write_database(db_file, players)
