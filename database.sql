@@ -29,8 +29,9 @@ CREATE TABLE games(
 );
 
 CREATE TABLE championshipDays(
-	id int,
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	year int, -- e.g. 1617 for 2016/17
 	start datetime,
 	ending datetime,
-	PRIMARY KEY(id)
+	link varchar(512) -- the link for the stand
 );
