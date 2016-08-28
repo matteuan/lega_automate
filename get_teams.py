@@ -11,7 +11,7 @@ def parse_teams(link):
     team_to_id[""] = 0
 
     r = requests.get(link)
-    soup = BeautifulSoup(r.text)
+    soup = BeautifulSoup(r.text, "lxml")
 
     raw_teams = soup.findAll("a", class_="sch_ris ds_black")
     max_idx = team_to_id[max(team_to_id, key=team_to_id.get)]
@@ -26,9 +26,12 @@ def parse_teams(link):
 def write_database(db_file, teams):
     conn = sqlite3.connect(db_file)
     for name, team_id in teams.items():
-        conn.execute('INSERT INTO teams VALUES ' +
+        if not name:
+            continue
+        conn.execute('INSERT OR IGNORE INTO teams VALUES ' +
                      '("{}","{}")'.
                      format(team_id, name))
+        print("Written the team: " + name)
 
     conn.commit()
     conn.close()

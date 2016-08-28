@@ -1,9 +1,10 @@
 """ get_players retrieve all the players and fill the players table.
-It is a one time script."""
+It is a one time script. http://195.56.77.208/team/"""
 from bs4 import BeautifulSoup
 from threading import Thread
 import requests
 import sys
+import time
 import sqlite3
 
 team_to_id = dict()
@@ -26,7 +27,7 @@ class SinglePlayer(Thread):
     def run(self):
         r = requests.get(self.link)
         soup = BeautifulSoup(r.text)
-        team = soup.find("a", class_="w tdn").getText()
+        team = soup.find("a", class_="w tdn").getText().strip()
         if not team in team_to_id:
             print("Warning: {} not found".format(team))
             return
@@ -35,23 +36,27 @@ class SinglePlayer(Thread):
         height = trs[9].find_all("td")[3].text.split(" ")[0].strip()
         weight = trs[10].find_all("td")[3].text.split(" ")[0].strip()
         birthday = trs[10].find_all("td")[1].text.strip()
+
+
         write_database(self.db, [self.name, height, weight, birthday, team])
         print("Parsed {}".format(self.name))
 
 def parse_players(link, db_file):
     r = requests.get(link)
-    soup = BeautifulSoup(r.text)
+    soup = BeautifulSoup(r.text, "lxml")
     raw_players = soup.findAll("a", class_="sch_ris")
     for pl in raw_players:
         name = pl.get_text().replace('\xa0', ' ')
         th = SinglePlayer(name, pl["href"], db_file)
+        # to mitigate SQLite concurrency limits
+        time.sleep(0.3)
         th.start()
         # players.append(parse_single_player(name, pl["href"]))
 
 def write_database(db_file, player):
     conn = sqlite3.connect(db_file)
 
-    conn.execute('INSERT INTO players VALUES ' +
+    conn.execute('INSERT OR IGNORE INTO players VALUES ' +
                  '(NULL, "{}","{}","{}","{}", "{}", "0.0")'.
                  format(*player))
 
