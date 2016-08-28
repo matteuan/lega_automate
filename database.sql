@@ -6,12 +6,14 @@ CREATE TABLE players(
 	birthday date,
 	team int,
 	role real,
+	UNIQUE(id, name)
 );
 
 CREATE TABLE teams(
 	id int,
 	name varchar(255),
-	PRIMARY KEY(id ASC)
+	PRIMARY KEY(id ASC),
+	UNIQUE(id, name)
 );
 
 CREATE TABLE games(
@@ -20,7 +22,6 @@ CREATE TABLE games(
 	teamB int,
 	pointsA int,
 	pointsB int,
-	eventDate datetime,
 	champDay int,
 	statsA varchar(2047),
 	statsB varchar(2047),
